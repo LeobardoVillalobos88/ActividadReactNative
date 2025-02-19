@@ -4,6 +4,7 @@ import { Image, Input, Button } from "@rneui/base";
 import { isEmpty } from "lodash";
 import { Icon } from "@rneui/base";
 import { Card } from "@rneui/themed";
+import { firebaseAuth, createUserWithEmailAndPassword } from "../../../config/utils/firebaseConnection"; // Asegúrate de que la ruta sea correcta
 
 export default function CreateAccount() {
     const [email, setEmail] = useState("");
@@ -13,23 +14,30 @@ export default function CreateAccount() {
     const [showPassword, setShowPassword] = useState(true);
     const [showConfirmPassword, setShowConfirmPassword] = useState(true);
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
+        setError({ email: "", password: "", confirmPassword: "" });
+
         if (isEmpty(email) || isEmpty(password) || isEmpty(confirmPassword)) {
             setError({
-                email: "El correo electrónico es requerida",
-                password: "La contraseña es requerida",
-                confirmPassword: "La confirmación de la contraseña es requerida",
+                email: "El correo electrónico es obligatoria",
+                password: "La contraseña es obligatoria",
+                confirmPassword: "La confirmación de la contraseña es obligatoria",
             });
-        } else if (password !== confirmPassword) {
-            setError({
-                email: "",
-                password: "",
-                confirmPassword: "Las contraseñas no coinciden",
-            });
-        } else {
-            console.log("Registro exitoso");
-            console.log(email, password, confirmPassword);
-            setError({ email: "", password: "", confirmPassword: "" });
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError({ confirmPassword: "Las contraseñas no coinciden" });
+            return;
+        }
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+            console.log("Cuenta creada:", userCredential.user);
+            alert("Registro exitoso");
+        } catch (error) {
+            console.error("Error al registrar:", error.message);
+            setError({ email: "Error al crear la cuenta, intenta con otro correo" });
         }
     };
 
@@ -99,10 +107,10 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#f5f5f5",
-        paddingHorizontal: 20,
+        paddingHorizontal: 10,
     },
     card: {
-        width: "100%",
+        width: "90%",
         maxWidth: 400,
         borderRadius: 20,
         padding: 20,
